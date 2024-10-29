@@ -74,11 +74,11 @@ void loop() {
     previousMillis = millis();
     cpm = (float) (60000 * counts) / (millis() - startCountTime);
     read_env();
-    Serial.printf("Counts: %d, CPM: %.2f\n", counts, cpm);
-    Serial.printf("Temp: %.2f, Pres: %.2f, Humi: %.2f\n", temp, pres, humi);
-    Serial.printf("Servo Speed: %d\n", pos-speed0);
-    Serial.printf("LED1: %d, LED2: %d\n", digitalRead(LED1_PIN), digitalRead(LED2_PIN));
-    Serial.println("****************************************************");
+    //Serial.printf("Counts: %d, CPM: %.2f\n", counts, cpm);
+    //Serial.printf("Temp: %.2f, Pres: %.2f, Humi: %.2f\n", temp, pres, humi);
+    //Serial.printf("Servo Speed: %d\n", pos-speed0);
+    //Serial.printf("LED1: %d, LED2: %d\n", digitalRead(LED1_PIN), digitalRead(LED2_PIN));
+    //Serial.println("****************************************************");
   }
 
 }
@@ -89,6 +89,16 @@ void config_api() {
 
   server.on("/geiger", HTTP_GET, [](AsyncWebServerRequest *request)
         { 
+          char answer[60];
+          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f}", counts, cpm);
+          request->send(200, "application/json", answer); 
+          });
+  server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request)
+        { 
+          Serial.println("Hello");
+          startCountTime = millis();
+          counts = 0;
+          cpm = 0;
           char answer[60];
           snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f}", counts, cpm);
           request->send(200, "application/json", answer); 
