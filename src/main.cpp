@@ -23,15 +23,11 @@ void setup() {
   pinMode(LED1_PIN, OUTPUT);
   pinMode(LED2_PIN, OUTPUT);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  Serial.printf("Connecting to %s...", SSID);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(100);
-    Serial.print(".");
-  }
-  Serial.println(" Connected!");
+
+  Serial.println("Creating access point!!");
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(SSID, PASS);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255,255,255,0));
   Serial.println(WiFi.localIP());
   delay(100);
 
@@ -161,6 +157,9 @@ void config_api() {
     request->send(200, "application/json", answer); 
   }
   });
+
+  server.onNotFound([](AsyncWebServerRequest *request)
+        { request->send(404, "application/json", "{\"Not\": \"Found \"}"); });
   server.begin();
 }
 

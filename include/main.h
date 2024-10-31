@@ -26,8 +26,10 @@
 
 #define SG90_PIN 45
 
-#define SSID "Dirijo"
-#define PASS "qkay6139"
+#define SSID "slowcontrol"
+#define PASS ""
+
+IPAddress apIP = IPAddress(192, 168, 21, 1);
 
 void IRAM_ATTR Timer0_ISR();
 void read_env();
