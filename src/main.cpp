@@ -12,6 +12,7 @@ unsigned long previousMillis, startCountTime, ledMillis;
 
 unsigned long counts = 0;
 float cpm = 0;
+int status;
 
 Servo sg90;
 int speed0 = 92, pos;
@@ -58,7 +59,6 @@ void setup() {
   pos = speed0;
   sg90.write(pos);
 
-  attachInterrupt(digitalPinToInterrupt(GEIGER_PIN), ISR_impulse, RISING);
   startCountTime = millis();
   Serial.println("Starting the counting...");
   delay(10);
@@ -68,7 +68,9 @@ void loop() {
   if ((millis() - previousMillis) > 1000)
   {
     previousMillis = millis();
-    cpm = (float) (60000 * counts) / (millis() - startCountTime);
+    if (status == 1) {
+      cpm = (float) (60000 * counts) / (millis() - startCountTime);
+    }
     read_env();
     Serial.printf("Counts: %d, CPM: %.2f\n", counts, cpm);
     Serial.printf("Temp: %.2f, Pres: %.2f, Humi: %.2f\n", temp, pres, humi);
@@ -85,17 +87,51 @@ void config_api() {
 
   server.on("/geiger", HTTP_GET, [](AsyncWebServerRequest *request)
         { 
-          char answer[60];
-          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f}", counts, cpm);
+          char answer[70];
+          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f, \"status\": %d}", counts, cpm, status);
           request->send(200, "application/json", answer); 
           });
+
+  server.on("/start", HTTP_GET, [](AsyncWebServerRequest *request)
+        { 
+          if (status == 0) {
+            status = 1;
+            startCountTime = millis();
+            counts = 0;
+            cpm = 0;
+            attachInterrupt(digitalPinToInterrupt(GEIGER_PIN), ISR_impulse, RISING);
+          }
+          
+          char answer[70];
+          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f, \"status\": %d}", counts, cpm, status);
+          request->send(200, "application/json", answer); 
+          });
+
+  server.on("/stop", HTTP_GET, [](AsyncWebServerRequest *request)
+        { 
+          if (status == 1) {
+            status = 0;
+            startCountTime = millis();
+
+            detachInterrupt(digitalPinToInterrupt(GEIGER_PIN));
+          }
+          
+          char answer[70];
+          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f, \"status\": %d}", counts, cpm, status);
+          request->send(200, "application/json", answer); 
+          });
+          
   server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request)
         { 
-          startCountTime = millis();
+          detachInterrupt(digitalPinToInterrupt(GEIGER_PIN));
           counts = 0;
           cpm = 0;
-          char answer[60];
-          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f}", counts, cpm);
+          status = 1;
+          attachInterrupt(digitalPinToInterrupt(GEIGER_PIN), ISR_impulse, RISING);
+          startCountTime = millis();
+
+          char answer[70];
+          snprintf(answer, sizeof(answer), "{\"counts\": %d, \"cpm\": %.2f, \"status\": %d}", counts, cpm, status);
           request->send(200, "application/json", answer); 
           });
 
@@ -159,7 +195,7 @@ void config_api() {
   });
 
   server.onNotFound([](AsyncWebServerRequest *request)
-        { request->send(404, "application/json", "{\"Not\": \"Found \"}"); });
+        { request->send(404, "application/json", "{\"Not\": \"Found\"}"); });
   server.begin();
 }
 
