@@ -65,12 +65,14 @@ void setup() {
 }
 
 void loop() {
-  if ((millis() - previousMillis) > 1000)
-  {
-    previousMillis = millis();
+  if ((millis() - previousMillis) > 10) {
     if (status == 1) {
       cpm = (float) (60000 * counts) / (millis() - startCountTime);
     }
+  }
+  if ((millis() - previousMillis) > 1000)
+  {
+    previousMillis = millis();
     read_env();
     Serial.printf("Counts: %d, CPM: %.2f\n", counts, cpm);
     Serial.printf("Temp: %.2f, Pres: %.2f, Humi: %.2f\n", temp, pres, humi);
